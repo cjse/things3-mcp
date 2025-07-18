@@ -8,11 +8,16 @@ module Things3Mcp
         str.to_s.force_encoding('UTF-8').gsub('"', '\\"')
       end
 
+      def self.format_date(date)
+        return '' if date.nil?
+        date.strftime('%Y-%m-%d')
+      end
+
       def self.add_task_script(name:, notes: nil, project: nil, area: nil, due_date: nil, start_date: nil, tags: [])
         script = <<~APPLESCRIPT
           tell application "Things3"
             set newToDo to make new to do with properties {name:"#{escape_quotes(name)}"#{notes ? %Q[, notes:"#{escape_quotes(notes)}"] : ""}}
-            
+
             #{if project
               <<~PROJECT_SCRIPT
                 try
@@ -32,17 +37,17 @@ module Things3Mcp
                 end try
               AREA_SCRIPT
             end}
-            
+
             #{if start_date
               <<~START_DATE_SCRIPT
                 try
-                  set activation date of newToDo to date "#{start_date[:parsed_date]}"
+                  schedule newToDo for date "#{start_date[:parsed_date]}"
                 on error
                   -- Invalid start date format
                 end try
               START_DATE_SCRIPT
             end}
-            
+
             #{if due_date
               <<~DUE_DATE_SCRIPT
                 try
@@ -52,13 +57,13 @@ module Things3Mcp
                 end try
               DUE_DATE_SCRIPT
             end}
-            
+
             #{tags.map { |tag|
               <<~TAG_SCRIPT
                 set tag names of newToDo to (tag names of newToDo) & "#{escape_quotes(tag)}"
               TAG_SCRIPT
             }.join}
-            
+
             set result_parts to {"Task created: " & name of newToDo}
             #{if start_date
               'set end of result_parts to "Start: ' + start_date[:parsed_date] + '"'
@@ -66,7 +71,7 @@ module Things3Mcp
             #{if due_date
               'set end of result_parts to "Due: ' + due_date[:parsed_date] + '"'
             end}
-            
+
             return result_parts as string
           end tell
         APPLESCRIPT
@@ -90,7 +95,7 @@ module Things3Mcp
           tell application "Things3"
             set taskList to {}
             set taskCount to 0
-            
+
             #{if list_type == "completed"
               'set theTasks to completed to dos'
             elsif list_type == "canceled"
@@ -100,7 +105,7 @@ module Things3Mcp
             else
               %Q[set theTasks to to dos of list "#{list_name}"]
             end}
-            
+
             #{if project_filter
               <<~PROJECT_FILTER
                 set filteredTasks to {}
@@ -126,7 +131,7 @@ module Things3Mcp
                 set theTasks to filteredTasks
               AREA_FILTER
             end}
-            
+
             #{if tag_filter
               <<~TAG_FILTER
                 set filteredTasks to {}
@@ -140,7 +145,7 @@ module Things3Mcp
                 set theTasks to filteredTasks
               TAG_FILTER
             end}
-            
+
             repeat with aToDo in theTasks
               #{if limit
                 <<~LIMIT_CHECK
@@ -150,7 +155,7 @@ module Things3Mcp
                   set taskCount to taskCount + 1
                 LIMIT_CHECK
               end}
-              
+
               set taskName to name of aToDo
               set taskNotes to notes of aToDo
               set taskStatus to status of aToDo
@@ -158,23 +163,23 @@ module Things3Mcp
               set taskArea to ""
               set taskDueDate to ""
               set taskTags to ""
-              
+
               try
                 set taskProject to name of project of aToDo
               end try
-              
+
               try
                 set taskArea to name of area of aToDo
               end try
-              
+
               try
                 set taskDueDate to due date of aToDo as string
               end try
-              
+
               try
                 set taskTags to tag names of aToDo as string
               end try
-              
+
               set taskInfo to "• " & taskName
               if taskStatus is not "open" then
                 set taskInfo to taskInfo & " [" & taskStatus & "]"
@@ -194,10 +199,10 @@ module Things3Mcp
               if taskNotes is not "" then
                 set taskInfo to taskInfo & "\\n  Notes: " & taskNotes
               end if
-              
+
               set end of taskList to taskInfo
             end repeat
-            
+
             if length of taskList is 0 then
               return "No tasks found in #{list_type} list"
             else
@@ -221,28 +226,28 @@ module Things3Mcp
         APPLESCRIPT
       end
 
-      def self.update_task_script(task_id:, title: nil, notes: nil, project: nil, area: nil, 
+      def self.update_task_script(task_id:, title: nil, notes: nil, project: nil, area: nil,
                                  due_date: nil, start_date: nil, deadline: nil, tags: nil)
         <<~APPLESCRIPT
           tell application "Things3"
             try
               set foundTask to first to do whose name is "#{escape_quotes(task_id)}" and status is "open"
               set updateList to {}
-              
+
               #{if title
                 <<~NAME_UPDATE
                   set name of foundTask to "#{escape_quotes(title)}"
                   set end of updateList to "title"
                 NAME_UPDATE
               end}
-              
+
               #{if notes
                 <<~NOTES_UPDATE
                   set notes of foundTask to "#{escape_quotes(notes)}"
                   set end of updateList to "notes"
                 NOTES_UPDATE
               end}
-              
+
               #{if project
                 if project == "none"
                   <<~REMOVE_PROJECT
@@ -263,7 +268,7 @@ module Things3Mcp
                   SET_PROJECT
                 end
               end}
-              
+
               #{if area
                 if area == "none"
                   <<~REMOVE_AREA
@@ -284,18 +289,18 @@ module Things3Mcp
                   SET_AREA
                 end
               end}
-              
+
               #{if start_date
                 <<~SET_START_DATE
                   try
-                    set activation date of foundTask to date "#{start_date[:parsed_date]}"
+                    schedule foundTask for date "#{start_date[:parsed_date]}"
                     set end of updateList to "set start date"
                   on error
                     set end of updateList to "invalid start date format"
                   end try
                 SET_START_DATE
               end}
-              
+
               #{if due_date
                 <<~SET_DUE_DATE
                   try
@@ -306,7 +311,7 @@ module Things3Mcp
                   end try
                 SET_DUE_DATE
               end}
-              
+
               #{if deadline
                 <<~SET_DEADLINE
                   try
@@ -317,20 +322,20 @@ module Things3Mcp
                   end try
                 SET_DEADLINE
               end}
-              
+
               #{if tags
                 <<~SET_TAGS
                   set tag names of foundTask to {#{tags.map { |tag| %Q["#{escape_quotes(tag)}"] }.join(", ")}}
                   set end of updateList to "updated tags"
                 SET_TAGS
               end}
-              
+
               if length of updateList is 0 then
                 return "❓ No changes specified for task: #{escape_quotes(task_id)}"
               else
                 return "✏️ Updated '" & name of foundTask & "'"
               end if
-              
+
             on error
               return "❌ Task not found: #{escape_quotes(task_id)}"
             end try
