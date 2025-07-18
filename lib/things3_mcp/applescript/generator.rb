@@ -59,7 +59,7 @@ module Things3Mcp
               TAG_SCRIPT
             }.join}
             
-            result_parts = ["Task created: " & name of newToDo]
+            set result_parts to {"Task created: " & name of newToDo}
             #{if start_date
               'set end of result_parts to "Start: ' + start_date[:parsed_date] + '"'
             end}
