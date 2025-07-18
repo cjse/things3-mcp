@@ -181,7 +181,7 @@ module Things3Mcp
               end try
 
               set taskInfo to "• " & taskName
-              if taskStatus is not "open" then
+              if taskStatus is not open then
                 set taskInfo to taskInfo & " [" & taskStatus & "]"
               end if
               if taskProject is not "" then
@@ -216,7 +216,7 @@ module Things3Mcp
         <<~APPLESCRIPT
           tell application "Things3"
             try
-              set foundTask to first to do whose name is "#{escape_quotes(task_id)}" and status is "open"
+              set foundTask to first to do whose name is "#{escape_quotes(task_id)}" and status is open
               set status of foundTask to completed
               return "✅ Completed: " & name of foundTask
             on error
@@ -231,7 +231,7 @@ module Things3Mcp
         <<~APPLESCRIPT
           tell application "Things3"
             try
-              set foundTask to first to do whose name is "#{escape_quotes(task_id)}" and status is "open"
+              set foundTask to first to do whose name is "#{escape_quotes(task_id)}" and status is open
               set updateList to {}
 
               #{if title
@@ -353,7 +353,7 @@ module Things3Mcp
           <<~APPLESCRIPT
             tell application "Things3"
               try
-                set foundTask to first to do whose name is "#{escape_quotes(task_id)}" and status is "open"
+                set foundTask to first to do whose name is "#{escape_quotes(task_id)}" and status is open
                 set targetProject to first project whose name is "#{escape_quotes(destination)}"
                 move foundTask to targetProject
                 return "📁 Moved '" & name of foundTask & "' to project: #{escape_quotes(destination)}"
@@ -370,7 +370,7 @@ module Things3Mcp
           <<~APPLESCRIPT
             tell application "Things3"
               try
-                set foundTask to first to do whose name is "#{escape_quotes(task_id)}" and status is "open"
+                set foundTask to first to do whose name is "#{escape_quotes(task_id)}" and status is open
                 set targetArea to first area whose name is "#{escape_quotes(destination)}"
                 move foundTask to targetArea
                 return "🏷️ Moved '" & name of foundTask & "' to area: #{escape_quotes(destination)}"
