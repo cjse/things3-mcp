@@ -14,10 +14,6 @@ This MCP server provides tools to interact with Things 3:
 - **complete_task** - Mark tasks as completed
 - **delete_task** - Delete tasks
 - **move_task** - Move tasks between projects and areas
-- **filter_tasks** - Advanced filtering with multiple criteria
-- **bulk_create** - Create multiple tasks at once
-- **weekly_review** - Generate weekly productivity reviews
-- **productivity_stats** - Analyze productivity patterns
 
 ## Installation
 

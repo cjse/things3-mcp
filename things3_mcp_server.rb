@@ -19,7 +19,7 @@ if __FILE__ == $0
     name: 'things3-mcp',
     version: Things3Mcp::VERSION
   )
-  
+
   # Register all tools
   server.register_tool(Things3Mcp::Tools::AddTaskTool)
   server.register_tool(Things3Mcp::Tools::GetTasksTool)
@@ -27,11 +27,7 @@ if __FILE__ == $0
   server.register_tool(Things3Mcp::Tools::CompleteTaskTool)
   server.register_tool(Things3Mcp::Tools::DeleteTaskTool)
   server.register_tool(Things3Mcp::Tools::MoveTaskTool)
-  server.register_tool(Things3Mcp::Tools::FilterTasksTool)
-  server.register_tool(Things3Mcp::Tools::BulkCreateTool)
-  server.register_tool(Things3Mcp::Tools::WeeklyReviewTool)
-  server.register_tool(Things3Mcp::Tools::ProductivityStatsTool)
-  
+
   # Start the server
   server.start
 end
