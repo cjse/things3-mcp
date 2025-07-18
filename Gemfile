@@ -7,3 +7,7 @@ gem 'time'
 gem 'dotenv'
 gem 'dry-schema'
 gem 'chronic', '~> 0.10.2'  # Natural language date parsing
+
+group :development, :test do
+  gem 'rspec', '~> 3.13'
+end

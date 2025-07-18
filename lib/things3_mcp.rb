@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 # Main module file that requires all components
+require_relative 'things3_mcp/applescript/builder'
 require_relative 'things3_mcp/applescript/executor'
 require_relative 'things3_mcp/applescript/generator'
 require_relative 'things3_mcp/date_parser'

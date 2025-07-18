@@ -28,7 +28,7 @@ module Things3Mcp
       )
 
       result = @applescript_executor.execute(script)
-      
+
       {
         content: [
           {
@@ -55,7 +55,7 @@ module Things3Mcp
       )
 
       result = @applescript_executor.execute(script)
-      
+
       {
         content: [
           {
@@ -88,7 +88,7 @@ module Things3Mcp
       )
 
       result = @applescript_executor.execute(script)
-      
+
       {
         content: [
           {
@@ -101,11 +101,11 @@ module Things3Mcp
 
     def complete_task(args)
       task_id = args[:task_id] || args["task_id"]
-      
+
       script = AppleScript::Generator.complete_task_script(task_id: task_id)
 
       result = @applescript_executor.execute(script)
-      
+
       {
         content: [
           {
@@ -118,11 +118,11 @@ module Things3Mcp
 
     def delete_task(args)
       task_id = args[:task_id] || args["task_id"]
-      
+
       script = AppleScript::Generator.delete_task_script(task_id: task_id)
 
       result = @applescript_executor.execute(script)
-      
+
       {
         content: [
           {
@@ -145,7 +145,7 @@ module Things3Mcp
       )
 
       result = @applescript_executor.execute(script)
-      
+
       {
         content: [
           {
@@ -154,10 +154,6 @@ module Things3Mcp
           }
         ]
       }
-    end
-
-    def escape_quotes(str)
-      AppleScript::Generator.escape_quotes(str)
     end
   end
 end
