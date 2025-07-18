@@ -15,7 +15,6 @@ module Things3Mcp
       area = args[:area] || args["area"]
       due_date = @date_parser.parse_natural_date(args[:due_date] || args["due_date"]) if args[:due_date] || args["due_date"]
       start_date = @date_parser.parse_natural_date(args[:start_date] || args["start_date"]) if args[:start_date] || args["start_date"]
-      deadline = @date_parser.parse_natural_date(args[:deadline] || args["deadline"]) if args[:deadline] || args["deadline"]
       tags = args[:tags] || args["tags"] || []
 
       script = AppleScript::Generator.add_task_script(
@@ -75,7 +74,6 @@ module Things3Mcp
       area = args[:area] || args["area"]
       due_date = @date_parser.parse_natural_date(args[:due_date] || args["due_date"]) if args[:due_date] || args["due_date"]
       start_date = @date_parser.parse_natural_date(args[:start_date] || args["start_date"]) if args[:start_date] || args["start_date"]
-      deadline = @date_parser.parse_natural_date(args[:deadline] || args["deadline"]) if args[:deadline] || args["deadline"]
       tags = args[:tags] || args["tags"]
 
       script = AppleScript::Generator.update_task_script(
@@ -86,7 +84,6 @@ module Things3Mcp
         area: area,
         due_date: due_date,
         start_date: start_date,
-        deadline: deadline,
         tags: tags
       )
 

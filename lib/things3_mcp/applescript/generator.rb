@@ -227,7 +227,7 @@ module Things3Mcp
       end
 
       def self.update_task_script(task_id:, title: nil, notes: nil, project: nil, area: nil,
-                                 due_date: nil, start_date: nil, deadline: nil, tags: nil)
+                                 due_date: nil, start_date: nil, tags: nil)
         <<~APPLESCRIPT
           tell application "Things3"
             try
@@ -310,17 +310,6 @@ module Things3Mcp
                     set end of updateList to "invalid due date format"
                   end try
                 SET_DUE_DATE
-              end}
-
-              #{if deadline
-                <<~SET_DEADLINE
-                  try
-                    set deadline of foundTask to date "#{deadline[:parsed_date]}"
-                    set end of updateList to "set deadline"
-                  on error
-                    set end of updateList to "invalid deadline format"
-                  end try
-                SET_DEADLINE
               end}
 
               #{if tags
