@@ -90,7 +90,7 @@ RSpec.describe Things3Mcp::AppleScript::Generator do
         tags: ['urgent', 'work', 'important']
       )
 
-      expect(script).to include('set tag names of theToDo to {"urgent", "work", "important"}')
+      expect(script).to include('set tag names of theToDo to "urgent, work, important"')
     end
 
     it 'generates AppleScript for a task with all parameters' do
@@ -110,7 +110,7 @@ RSpec.describe Things3Mcp::AppleScript::Generator do
       expect(script).to include('set targetDestination to first project whose name is "Big Project"')
       expect(script).to include('schedule theToDo for date "18 July 2025"')
       expect(script).to include('set due date of theToDo to date "20 July 2025"')
-      expect(script).to include('set tag names of theToDo to {"priority", "review"}')
+      expect(script).to include('set tag names of theToDo to "priority, review"')
       expect(script).to include('set end of result_parts to "Start: 18 July 2025"')
       expect(script).to include('set end of result_parts to "Due: 20 July 2025"')
     end
@@ -449,7 +449,7 @@ RSpec.describe Things3Mcp::AppleScript::Generator do
 
         expect(script).to include('set filteredTasks to {}')
         expect(script).to include('repeat with aToDo in theTasks')
-        expect(script).to include('if "urgent" is in tag names of aToDo then')
+        expect(script).to include('if tag names of aToDo contains "urgent" then')
         expect(script).to include('set end of filteredTasks to aToDo')
         expect(script).to include('set theTasks to filteredTasks')
       end
@@ -460,7 +460,7 @@ RSpec.describe Things3Mcp::AppleScript::Generator do
           tag_filter: 'tag "with quotes"'
         )
 
-        expect(script).to include('if "tag \\"with quotes\\"" is in tag names of aToDo')
+        expect(script).to include('if tag names of aToDo contains "tag \\"with quotes\\""')
       end
     end
 
@@ -671,7 +671,7 @@ RSpec.describe Things3Mcp::AppleScript::Generator do
           tags: ['urgent', 'work', 'important']
         )
 
-        expect(script).to include('set tag names of theToDo to {"urgent", "work", "important"}')
+        expect(script).to include('set tag names of theToDo to "urgent, work, important"')
         expect(script).to include('set end of result_parts to "Updated tags"')
       end
 
@@ -681,7 +681,7 @@ RSpec.describe Things3Mcp::AppleScript::Generator do
           tags: ['tag "one"', 'tag "two"']
         )
 
-        expect(script).to include('set tag names of theToDo to {"tag \\"one\\"", "tag \\"two\\""}')
+        expect(script).to include('set tag names of theToDo to "tag \\"one\\", tag \\"two\\""')
       end
 
       it 'generates AppleScript to clear tags with empty array' do
@@ -690,7 +690,7 @@ RSpec.describe Things3Mcp::AppleScript::Generator do
           tags: []
         )
 
-        expect(script).to include('set tag names of theToDo to {}')
+        expect(script).to include('set tag names of theToDo to ""')
         expect(script).to include('set end of result_parts to "Updated tags"')
       end
     end
@@ -714,7 +714,7 @@ RSpec.describe Things3Mcp::AppleScript::Generator do
       expect(script).to include('set targetDestination to first project whose name is "New Project"')
       expect(script).to include('schedule theToDo for date "18 July 2025"')
       expect(script).to include('set due date of theToDo to date "30 July 2025"')
-      expect(script).to include('set tag names of theToDo to {"updated", "multiple"}')
+      expect(script).to include('set tag names of theToDo to "updated, multiple"')
       expect(script).to include('return "✏️ Updated \'" & name of theToDo & "\'"')
     end
 

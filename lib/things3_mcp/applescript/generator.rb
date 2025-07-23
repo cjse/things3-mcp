@@ -204,9 +204,9 @@ module Things3Mcp
 
         def set_tags_script(tags)
           if tags
-            tag_list = tags.map { |tag| '"' + escape_quotes(tag) + '"' }.join(', ')
+            tag_string = tags.join(", ")
             <<~SET_TAGS_SCRIPT
-              set tag names of theToDo to {#{tag_list}}
+              set tag names of theToDo to "#{escape_quotes(tag_string)}"
               set end of result_parts to "Updated tags"
             SET_TAGS_SCRIPT
           end
@@ -237,7 +237,7 @@ module Things3Mcp
 
         def filter_tasks_script(filter, filter_type)
           filter_statement = case filter_type
-            when "tags"    then %Q("#{escape_quotes(filter)}" is in tag names of aToDo)
+            when "tags"    then %Q(tag names of aToDo contains "#{escape_quotes(filter)}")
             when "project" then %Q(name of project of aToDo is "#{escape_quotes(filter)}")
             when "area"    then %Q(name of area of aToDo is "#{escape_quotes(filter)}")
           end
