@@ -90,7 +90,7 @@ RSpec.describe Things3Mcp::AppleScript::Generator::Tasks do
     it 'uses the project as the source when no list is given' do
       script = described_class.list_script(project: 'P', tag: 'urgent')
       expect(script).to include('repeat with x in (to dos of my findProject("P"))')
-      expect(script).to include('if ("urgent" is in tag names of x) then')
+      expect(script).to include('if (tag names of x contains "urgent") then')
     end
 
     it 'filters inside a list with project, area, search, and status' do

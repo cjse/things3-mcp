@@ -16,7 +16,7 @@ module Things3Mcp
           conditions = []
           conditions << "my areaName(x) is #{Common.q(area)}" if area
           conditions << "status of x is #{status}" if status && STATUSES.include?(status)
-          conditions << "#{Common.q(tag)} is in tag names of x" if tag
+          conditions << "tag names of x contains #{Common.q(tag)}" if tag
           conditions << "name of x contains #{Common.q(search)}" if search && !search.strip.empty?
           Common.tell(Common.collect_records('project', 'projects', conditions: conditions, limit: limit))
         end

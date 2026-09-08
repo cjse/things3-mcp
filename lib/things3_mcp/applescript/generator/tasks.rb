@@ -102,13 +102,13 @@ module Things3Mcp
             source = "to dos of list #{Common.q(list_name(list))}"
             conditions << "my projectName(x) is #{Common.q(project)}" if project
             conditions << "my areaName(x) is #{Common.q(area)}" if area
-            conditions << "#{Common.q(tag)} is in tag names of x" if tag
+            conditions << "tag names of x contains #{Common.q(tag)}" if tag
           elsif project
             source = "to dos of my findProject(#{Common.q(project)})"
-            conditions << "#{Common.q(tag)} is in tag names of x" if tag
+            conditions << "tag names of x contains #{Common.q(tag)}" if tag
           elsif area
             source = "to dos of my findArea(#{Common.q(area)})"
-            conditions << "#{Common.q(tag)} is in tag names of x" if tag
+            conditions << "tag names of x contains #{Common.q(tag)}" if tag
           elsif tag
             source = "to dos of my findTag(#{Common.q(tag)})"
           elsif list == 'all'

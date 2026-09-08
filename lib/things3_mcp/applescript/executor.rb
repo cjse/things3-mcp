@@ -28,6 +28,19 @@ module Things3Mcp
         result
       end
 
+      def things3_installed?
+        script = <<~APPLESCRIPT
+          try
+            tell application "Things3" to return "installed"
+          on error
+            return "not_installed"
+          end try
+        APPLESCRIPT
+        execute(script).strip == 'installed'
+      rescue AppleScriptError
+        false
+      end
+
       def things3_running?
         script = <<~APPLESCRIPT
           tell application "System Events"
