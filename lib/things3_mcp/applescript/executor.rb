@@ -1,85 +1,86 @@
 # frozen_string_literal: true
 
 require 'tempfile'
+require 'timeout'
 
 module Things3Mcp
   module AppleScript
+    # Runs AppleScript through osascript. Calls are serialized with a process-wide
+    # lock because Things handles one Apple event at a time, and a timeout guards
+    # against a stuck dialog in Things.
     class Executor
       class AppleScriptError < StandardError; end
 
-      def initialize(debug: false)
+      LOCK = Mutex.new
+      DEFAULT_TIMEOUT = 60
+
+      def initialize(debug: false, timeout: DEFAULT_TIMEOUT)
         @debug = debug
+        @timeout = timeout
       end
 
       def execute(script)
-        log_debug("Executing AppleScript:\n#{script}") if @debug
+        log_debug("Executing AppleScript:\n#{script}")
 
-        result = nil
+        result = LOCK.synchronize { run_osascript(script) }
 
-        Tempfile.create(['things3_script', '.scpt']) do |file|
-          file.write(script)
-          file.flush
-
-          result = `osascript #{file.path} 2>&1`.force_encoding('UTF-8')
-
-          if $?.exitstatus != 0
-            raise AppleScriptError, "AppleScript execution failed: #{result}"
-          end
-        end
-
-        log_debug("AppleScript result: #{result}") if @debug
+        log_debug("AppleScript result: #{result}")
         result
       end
 
-      def execute_with_response(script)
-        begin
-          result = execute(script)
-          {
-            success: true,
-            result: result.strip,
-            error: nil
-          }
-        rescue AppleScriptError => e
-          {
-            success: false,
-            result: nil,
-            error: e.message
-          }
-        end
-      end
-
-      def validate_things3_availability
-        test_script = <<~APPLESCRIPT
+      def things3_running?
+        script = <<~APPLESCRIPT
           tell application "System Events"
             return (name of processes) contains "Things3"
           end tell
         APPLESCRIPT
-
-        response = execute_with_response(test_script)
-
-        response[:success] && response[:result] == "true"
-      end
-
-      def things3_installed?
-        test_script = <<~APPLESCRIPT
-          try
-            tell application "Things3"
-              return "installed"
-            end tell
-          on error
-            return "not_installed"
-          end try
-        APPLESCRIPT
-
-        response = execute_with_response(test_script)
-
-        response[:success] && response[:result] == "installed"
+        execute(script).strip == 'true'
+      rescue AppleScriptError
+        false
       end
 
       private
 
+      def run_osascript(script)
+        Tempfile.create(['things3_script', '.applescript']) do |file|
+          file.write(script)
+          file.flush
+
+          reader, writer = IO.pipe
+          pid = Process.spawn('osascript', file.path, out: writer, err: writer)
+          writer.close
+
+          output = +''
+          status = nil
+          begin
+            Timeout.timeout(@timeout) do
+              output = reader.read
+              _, status = Process.wait2(pid)
+            end
+          rescue Timeout::Error
+            Process.kill('KILL', pid) rescue nil
+            Process.wait(pid) rescue nil
+            raise AppleScriptError, "AppleScript timed out after #{@timeout}s"
+          ensure
+            reader.close unless reader.closed?
+          end
+
+          output = output.force_encoding('UTF-8')
+          raise AppleScriptError, clean_error(output) unless status.success?
+
+          output
+        end
+      end
+
+      # osascript prefixes errors with "<file>:<line>:<col>: execution error: "
+      def clean_error(output)
+        message = output.strip.sub(/\A.*?(execution|script) error: /m, '')
+        message = message.sub(/ \(-?\d+\)\z/, '')
+        message.empty? ? 'AppleScript execution failed' : message
+      end
+
       def log_debug(message)
-        puts "[AppleScriptExecutor DEBUG] #{message}" if @debug
+        $stderr.puts "[AppleScriptExecutor DEBUG] #{message}" if @debug
       end
     end
   end

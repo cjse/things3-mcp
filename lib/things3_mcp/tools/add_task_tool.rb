@@ -1,39 +1,35 @@
-require 'fast_mcp'
+# frozen_string_literal: true
+
+require_relative 'base_tool'
 
 module Things3Mcp
   module Tools
-    class AddTaskTool < FastMcp::Tool
+    class AddTaskTool < BaseTool
       tool_name 'add_task'
-      description "Add a new task to Things 3 with natural language date parsing and smart organization"
-      
-      arguments do
-        required(:title).filled(:string).description("Task title")
-        optional(:notes).filled(:string).description("Task notes")
-        optional(:project).filled(:string).description("Project name")
-        optional(:area).filled(:string).description("Area name")
-        optional(:tags).array(:string).description("Tags")
-        optional(:due_date).filled(:string).description("Due date (natural language)")
-        optional(:start_date).filled(:string).description("Start date (natural language)")
-      end
-      
-      def call(title:, notes: nil, project: nil, area: nil, tags: nil, due_date: nil, start_date: nil)
-        executor = AppleScript::Executor.new(debug: false)
-        date_parser = DateParser.new(debug: false)
-        client = Client.new(executor, date_parser, debug: false)
-        
-        result = client.add_task({
-          title: title,
-          notes: notes,
-          project: project,
-          area: area,
-          tags: tags || [],
-          due_date: due_date,
-          start_date: start_date
-        })
-        
-        result[:content].first[:text]
-      rescue => e
-        "Error adding task: #{e.message}"
+      title 'Add task'
+      description 'Create a task in Things 3. Goes to the Inbox unless a project, area, or list is given.'
+      input_schema(
+        properties: {
+          title: { type: 'string', description: 'Task title' },
+          notes: { type: 'string' },
+          project: { type: 'string', description: 'Project name or id to put the task in' },
+          area: { type: 'string', description: 'Area name or id to put the task in' },
+          list: { type: 'string', enum: %w[inbox today anytime someday], description: 'Built-in list to put the task in' },
+          tags: { type: 'array', items: { type: 'string' } },
+          due_date: { type: 'string', description: "Deadline. #{DATE_DESC}" },
+          start_date: { type: 'string', description: "When to start (the \"when\" date). #{DATE_DESC}" }
+        },
+        required: ['title']
+      )
+      output_schema(TASK_SCHEMA)
+      annotations(read_only_hint: false, destructive_hint: false, idempotent_hint: false, open_world_hint: false)
+
+      def self.call(title:, notes: nil, project: nil, area: nil, list: nil, tags: nil, due_date: nil, start_date: nil, server_context: nil)
+        guarded do
+          task = client.add_task(title: title, notes: notes, project: project, area: area, list: list, tags: tags,
+                                 due_date: due_date, start_date: start_date)
+          record_response(task, "Created: #{summarize_task(task)}")
+        end
       end
     end
   end

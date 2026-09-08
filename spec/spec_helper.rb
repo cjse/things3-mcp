@@ -5,6 +5,7 @@ require 'rspec'
 
 # Load the library
 require_relative '../lib/things3_mcp'
+Dir[File.join(__dir__, 'support', '*.rb')].each { |f| require f }
 
 RSpec.configure do |config|
   config.expect_with :rspec do |expectations|

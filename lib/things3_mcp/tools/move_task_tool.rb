@@ -1,31 +1,29 @@
-require 'fast_mcp'
+# frozen_string_literal: true
+
+require_relative 'base_tool'
 
 module Things3Mcp
   module Tools
-    class MoveTaskTool < FastMcp::Tool
+    class MoveTaskTool < BaseTool
       tool_name 'move_task'
-      description "Move a task to a different project or area in Things 3"
-      
-      arguments do
-        required(:task_id).filled(:string).description("Task ID or title to identify the task")
-        required(:destination).filled(:string).description("Destination project or area name")
-        required(:destination_type).filled(:string).description("Whether destination is a project or area (project, area)")
-      end
-      
-      def call(task_id:, destination:, destination_type:)
-        executor = AppleScript::Executor.new(debug: false)
-        date_parser = DateParser.new(debug: false)
-        client = Client.new(executor, date_parser, debug: false)
-        
-        result = client.move_task({
-          task_id: task_id,
-          destination: destination,
-          destination_type: destination_type
-        })
-        
-        result[:content].first[:text]
-      rescue => e
-        "Error moving task: #{e.message}"
+      title 'Move task'
+      description 'Move a task in Things 3 to a project, an area, or a built-in list (inbox, today, anytime, someday).'
+      input_schema(
+        properties: {
+          task_id: { type: 'string', description: 'Task id or exact name' },
+          destination: { type: 'string', description: 'Project or area name or id, or a list name' },
+          destination_type: { type: 'string', enum: %w[project area list] }
+        },
+        required: %w[task_id destination destination_type]
+      )
+      output_schema(TASK_SCHEMA)
+      annotations(read_only_hint: false, destructive_hint: false, idempotent_hint: true, open_world_hint: false)
+
+      def self.call(task_id:, destination:, destination_type:, server_context: nil)
+        guarded do
+          task = client.move_task(task_id, destination: destination, destination_type: destination_type)
+          record_response(task, "Moved: #{summarize_task(task)}")
+        end
       end
     end
   end

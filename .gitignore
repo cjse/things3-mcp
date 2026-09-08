@@ -37,3 +37,6 @@ Gemfile.lock
 
 # Test artifacts
 /spec/tmp/
+
+# Runtime data (OAuth store)
+/data/

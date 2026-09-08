@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <!-- Replace /Users/YOU/things3-mcp with the checkout path. Install at
+       ~/Library/LaunchAgents/com.things3mcp.http.plist and load with
+       launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.things3mcp.http.plist -->
+  <key>Label</key>
+  <string>com.things3mcp.http</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/YOU/things3-mcp/bin/things3-mcp-http</string>
+  </array>
+
+  <key>WorkingDirectory</key>
+  <string>/Users/YOU/things3-mcp</string>
+
+  <!-- bin/things3-mcp-http uses `bundle exec`, so the Ruby that owns the bundle
+       must be first on PATH. For mise this is the shims directory. -->
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/Users/YOU/.local/share/mise/shims:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+    <key>LANG</key>
+    <string>en_US.UTF-8</string>
+    <!-- Secrets live in /Users/YOU/things3-mcp/.env (see .env.example). -->
+  </dict>
+
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+  <key>ThrottleInterval</key>
+  <integer>10</integer>
+
+  <key>StandardOutPath</key>
+  <string>/Users/YOU/things3-mcp/log/http.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/YOU/things3-mcp/log/http.log</string>
+</dict>
+</plist>
