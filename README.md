@@ -3,8 +3,8 @@
 A Model Context Protocol (MCP) server for Things 3 on macOS. It drives Things
 through AppleScript, the official automation interface, so it cannot corrupt
 your Things Cloud sync history. Run it locally over stdio, or on an always-on
-Mac behind Tailscale with OAuth 2.1 so claude.ai and the Claude mobile app can
-use it too.
+Mac behind a Cloudflare Tunnel with OAuth 2.1 so claude.ai and the Claude
+mobile app can use it too.
 
 Built with the official [`mcp`](https://github.com/modelcontextprotocol/ruby-sdk)
 Ruby gem. Started from [things3-mcp-ruby](https://github.com/mattsafaii/things3-mcp-ruby)
@@ -66,9 +66,16 @@ Or point any MCP client at `bin/things3-mcp-stdio`.
   password (`MCP_LOGIN_PASSWORD`)
 - an optional static bearer token (`MCP_AUTH_TOKEN`) for Claude Code
 
-Copy `.env.example` to `.env` and fill it in. Then see
-[deploy/README.md](deploy/README.md) for the Mac mini, launchd, and Tailscale
-Funnel setup, and for connecting Claude Code and claude.ai.
+Puma never listens on a public interface. Put a reverse proxy that terminates
+TLS in front of it.
+
+```bash
+bin/setup --public-url https://things.example.com   # .env, launchd agent, first call
+bin/status | bin/check | bin/logs | bin/restart | bin/stop | bin/uninstall
+```
+
+See [deploy/README.md](deploy/README.md) for the details, the proxy, and
+connecting Claude Code and claude.ai.
 
 ## Development
 

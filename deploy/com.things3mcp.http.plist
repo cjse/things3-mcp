@@ -2,9 +2,9 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-  <!-- Replace /Users/YOU/things3-mcp with the checkout path. Install at
-       ~/Library/LaunchAgents/com.things3mcp.http.plist and load with
-       launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.things3mcp.http.plist -->
+  <!-- Template. bin/setup replaces /Users/YOU/things3-mcp with the checkout
+       path and installs it at ~/Library/LaunchAgents/com.things3mcp.http.plist.
+       bin/start, bin/stop, bin/restart and bin/uninstall manage it from there. -->
   <key>Label</key>
   <string>com.things3mcp.http</string>
 

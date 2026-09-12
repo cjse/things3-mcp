@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# Stops the agent and removes its plist. Keeps .env, data/ and log/.
+#
+#   bin/uninstall            remove the agent only
+#   bin/uninstall --purge    also delete .env, data/ (OAuth clients and tokens) and log/
+source "$(dirname "$0")/lib.sh"
+
+purge=0
+case "${1:-}" in
+  --purge) purge=1 ;;
+  "") ;;
+  *) die "unknown option: $1" ;;
+esac
+
+"$ROOT/bin/stop"
+
+if [ -f "$PLIST" ]; then
+  say "Removing $PLIST"
+  rm -f "$PLIST"
+fi
+
+if [ "$purge" -eq 1 ]; then
+  say "Deleting .env, data/ and log/"
+  rm -rf "$ENV_FILE" "$ROOT/data" "$ROOT/log"
+else
+  say "Kept .env, data/ and log/. Run bin/uninstall --purge to delete them."
+fi
