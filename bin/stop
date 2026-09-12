@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# Stops and unloads the launchd agent. It does not start again until bin/start or the next login.
+source "$(dirname "$0")/lib.sh"
+
+if agent_loaded; then
+  say "Unloading $LABEL"
+  launchctl bootout "$SERVICE"
+else
+  say "Agent is not loaded"
+fi

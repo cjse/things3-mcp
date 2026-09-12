@@ -1,0 +1,87 @@
+#!/usr/bin/env bash
+# Installs the HTTP server as a launchd agent for the current user.
+#
+#   bin/setup [--public-url https://things.example.com] [--no-start]
+#
+# Installs gems, writes .env with fresh secrets if it is missing, installs the
+# agent, starts it, and makes one AppleScript call so macOS shows the Automation
+# prompt for Things while you are on screen. Safe to run again.
+source "$(dirname "$0")/lib.sh"
+
+public_url_arg=""
+start=1
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --public-url) public_url_arg="$2"; shift 2 ;;
+    --no-start) start=0; shift ;;
+    -h|--help) sed -n '2,9p' "$0"; exit 0 ;;
+    *) die "unknown option: $1" ;;
+  esac
+done
+
+cd "$ROOT"
+
+say "Checking Things and Ruby"
+[ -d /Applications/Things3.app ] || echo "warning: /Applications/Things3.app not found; the server starts but every tool call fails"
+if command -v mise &>/dev/null; then
+  mise install --quiet
+fi
+want="$(cat .ruby-version)"
+have="$(ruby -e 'print RUBY_VERSION' 2>/dev/null || true)"
+[ "$have" = "$want" ] || die "need Ruby $want, found '${have:-none}'. Install it with mise or rbenv, then rerun."
+
+say "Installing gems"
+bundle check >/dev/null 2>&1 || bundle install --quiet
+
+if [ -f "$ENV_FILE" ]; then
+  say ".env exists, keeping it"
+else
+  say "Writing .env"
+  if [ -n "$public_url_arg" ]; then
+    url="$public_url_arg"
+  else
+    read -rp "Public URL clients will use [http://127.0.0.1:9292]: " url
+    url="${url:-http://127.0.0.1:9292}"
+  fi
+  url="${url%/}"
+  password="$(openssl rand -base64 32)"
+  token="$(openssl rand -base64 32)"
+  (umask 077; cat > "$ENV_FILE" <<EOF
+MCP_PUBLIC_URL=$url
+MCP_LOGIN_PASSWORD=$password
+MCP_AUTH_TOKEN=$token
+MCP_DATA_DIR=$ROOT/data
+EOF
+  )
+  cat <<EOF
+
+  New secrets in $ENV_FILE. Store them in your password manager:
+    MCP_LOGIN_PASSWORD=$password   (typed on the OAuth page)
+    MCP_AUTH_TOKEN=$token   (static token for Claude Code)
+
+EOF
+fi
+mkdir -p data log
+
+say "Installing launchd agent $LABEL"
+write_plist
+
+if [ "$start" -eq 0 ]; then
+  say "Done. Start it with bin/start"
+  exit 0
+fi
+
+bin/start
+
+say "Making the first AppleScript call (click Allow on the Automation prompt if it appears)"
+bin/check || echo "Fix the problem above, then run bin/check again."
+
+cat <<EOF
+
+Connect clients to $(public_url)/mcp:
+  claude mcp add --transport http things $(public_url)/mcp
+  claude mcp add --transport http things $(public_url)/mcp --header "Authorization: Bearer \$MCP_AUTH_TOKEN"
+  claude.ai: Customize > Connectors > Add custom connector
+
+Other commands: bin/status, bin/logs, bin/restart, bin/stop, bin/uninstall
+EOF

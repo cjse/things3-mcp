@@ -1,88 +1,50 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
-require 'things3_mcp/client'
-require 'things3_mcp/applescript/generator'
-require 'things3_mcp/applescript/executor'
-require 'things3_mcp/date_parser'
 require 'securerandom'
 
+# End-to-end tests against the real Things 3 app. Every task they create is
+# moved to the Trash at the end. Skipped when Things is not installed.
 RSpec.describe Things3Mcp::Client, :integration do
-  # Skip these tests if Things3 is not installed
   before(:all) do
     executor = Things3Mcp::AppleScript::Executor.new
-    unless executor.things3_installed?
-      skip "Things3 is not installed. Skipping end-to-end integration tests."
-    end
+    skip 'Things3 is not installed. Skipping end-to-end integration tests.' unless executor.things3_installed?
   end
 
-  let(:applescript_executor) { Things3Mcp::AppleScript::Executor.new(debug: false) }
-  let(:date_parser) { Things3Mcp::DateParser.new(debug: false) }
-  let(:client) { described_class.new(applescript_executor, date_parser) }
+  let(:client) { described_class.new(Things3Mcp::AppleScript::Executor.new, Things3Mcp::DateParser.new) }
 
-  describe 'integration test: add and retrieve task' do
+  describe 'add, find, and delete a task' do
     let(:unique_title) { "Test Task #{SecureRandom.hex(8)}" }
-    let(:test_notes) { "This is a test task created by the integration test".dup }
-    let(:test_tags) { ["test".dup, "integration".dup] }
+    let(:test_notes) { "This is a test task created by the integration test\nwith a second line" }
+    let(:test_tags) { %w[test integration] }
 
-    it 'creates a task and verifies it exists' do
-      # Step 1: Add a task
-      add_result = client.add_task(
-        list: "inbox",
-        title: unique_title,
-        notes: test_notes,
-        tags: test_tags
-      )
+    it 'creates a task, finds it in the Inbox, and trashes it' do
+      created = client.add_task(title: unique_title, notes: test_notes, tags: test_tags, list: 'inbox')
+      expect(created).to include(name: unique_title, notes: test_notes, status: 'open')
+      expect(created[:tags]).to match_array(test_tags)
+      expect(created[:id]).to be_a(String)
 
-      expect(add_result[:content][0][:text]).to include(unique_title)
+      inbox = client.list_tasks(list: 'inbox', search: unique_title)
+      expect(inbox.map { |t| t[:id] }).to include(created[:id])
 
-      # Step 2: Get all tasks to verify the created task exists
-      get_result = client.get_tasks(list: "inbox", limit: 100)
+      found = client.get_task(created[:id])
+      expect(found).to include(name: unique_title, notes: test_notes)
 
-      expect(get_result[:content][0][:text]).to include(unique_title)
-      expect(get_result[:content][0][:text]).to include(test_notes)
-      test_tags.each do |tag|
-        expect(get_result[:content][0][:text]).to include(tag)
-      end
-
-      # Step 3: Clean up - delete the created task
-      delete_result = client.delete_task(task_id: unique_title)
-
-      # The delete message uses an emoji and "Deleted"
-      expect(delete_result[:content][0][:text]).to match(/Deleted|deleted/)
-      expect(delete_result[:content][0][:text]).to include(unique_title)
+      deleted = client.delete_task(created[:id])
+      expect(deleted[:id]).to eq(created[:id])
+      expect(client.list_tasks(list: 'trash', search: unique_title).map { |t| t[:id] }).to include(created[:id])
     end
   end
 
-  describe 'integration test with date parsing' do
+  describe 'dates' do
     let(:unique_title) { "Date Test Task #{SecureRandom.hex(8)}" }
-    let(:due_date_string) { "tomorrow" }
-    let(:parsed_date) { Date.today + 1 }
-    let(:formatted_date) { { parsed_date: parsed_date.strftime("%d %B %Y") } }
 
-    it 'creates a task with a due date and retrieves it' do
-      # Step 1: Add a task with due date
-      add_result = client.add_task(
-        list: "inbox",
-        title: unique_title,
-        due_date: due_date_string
-      )
-
-      # Check for successful creation
-      expect(add_result[:content][0][:text]).to include("Task created:")
-      expect(add_result[:content][0][:text]).to include(unique_title)
-      expect(add_result[:content][0][:text]).to include("Due:")
-
-      # Step 2: Get all tasks to find our task with due date
-      get_result = client.get_tasks(list: "inbox")
-
-      expect(get_result[:content][0][:text]).to include(unique_title)
-      # The actual date format in the output might vary, so just check it includes "Due:"
-      expect(get_result[:content][0][:text]).to match(/Due:/)
-
-      # Step 3: Clean up
-      delete_result = client.delete_task(task_id: unique_title)
-      expect(delete_result[:content][0][:text]).to match(/Deleted|deleted/)
+    it 'sets a deadline and a start date from natural language' do
+      created = client.add_task(title: unique_title, due_date: 'tomorrow', start_date: 'tomorrow', list: 'inbox')
+      tomorrow = (Date.today + 1).strftime('%Y-%m-%d')
+      expect(created).to include(due_date: tomorrow, start_date: tomorrow)
+    ensure
+      client.delete_task(unique_title) if created
     end
   end
 end

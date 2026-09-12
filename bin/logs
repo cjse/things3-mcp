@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# Follows the server log. Any arguments go to tail, for example bin/logs -n 200.
+source "$(dirname "$0")/lib.sh"
+
+[ -f "$LOG_FILE" ] || die "no log yet at $LOG_FILE"
+exec tail -f "$@" "$LOG_FILE"

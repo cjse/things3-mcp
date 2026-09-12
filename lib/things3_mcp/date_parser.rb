@@ -9,20 +9,23 @@ module Things3Mcp
       Chronic.time_class = Time
     end
 
+    class UnparseableDate < StandardError; end
+
+    # Returns a hash with :year, :month, :day (plus :iso, :parsed_date, :day_of_week),
+    # :none for the literal "none" (clear the date), or nil for blank input.
+    # Raises UnparseableDate when the text cannot be understood.
     def parse_natural_date(date_input)
       return nil if date_input.nil? || date_input.strip.empty?
-      return nil if date_input == "none"
+      keyword = date_input.strip.downcase
+      return :none if keyword == "none"
+      return :someday if keyword == "someday"
+      return :anytime if keyword == "anytime"
 
       if date_input.match?(/^\d{4}-\d{2}-\d{2}$/)
         begin
-          parsed = Date.parse(date_input)
-          return {
-            original_input: date_input,
-            parsed_date: parsed.strftime(DATE_FORMAT),
-            day_of_week: parsed.strftime("%A")
-          }
+          return build(date_input, Date.parse(date_input))
         rescue Date::Error
-          return nil
+          raise UnparseableDate, "Invalid date: #{date_input}"
         end
       end
 
@@ -30,52 +33,52 @@ module Things3Mcp
       parsed_time = Chronic.parse(normalized_input, context: :future)
 
       if parsed_time
-        parsed_date = parsed_time.strftime(DATE_FORMAT)
-        day_of_week = parsed_time.strftime("%A")
-
-        {
-          original_input: date_input,
-          parsed_date: parsed_date,
-          day_of_week: day_of_week
-        }
+        build(date_input, parsed_time.to_date)
       else
         log_debug("Failed to parse date: '#{date_input}' (normalized: '#{normalized_input}')")
-        nil
+        raise UnparseableDate, "Could not understand date: #{date_input}"
       end
+    end
+
+    def build(original, date)
+      {
+        original_input: original,
+        year: date.year,
+        month: date.month,
+        day: date.day,
+        iso: date.strftime('%Y-%m-%d'),
+        parsed_date: date.strftime(DATE_FORMAT),
+        day_of_week: date.strftime("%A")
+      }
     end
 
     def parse_multiple_dates(date_inputs)
       return [] if date_inputs.nil? || date_inputs.empty?
 
-      results = []
-      date_inputs.each do |date_input|
-        result = parse_natural_date(date_input)
-        results << result if result
-      end
-      results
+      date_inputs.map { |date_input| parse_natural_date(date_input) }.select { |r| r.is_a?(Hash) }
     end
 
     def date_in_past?(date_input)
       parsed = parse_natural_date(date_input)
-      return false unless parsed
+      return false unless parsed.is_a?(Hash)
 
-      parsed_date = Date.parse(parsed[:parsed_date])
+      parsed_date = Date.parse(parsed[:iso])
       parsed_date < Date.today
     end
 
     def date_is_today?(date_input)
       parsed = parse_natural_date(date_input)
-      return false unless parsed
+      return false unless parsed.is_a?(Hash)
 
-      parsed_date = Date.parse(parsed[:parsed_date])
+      parsed_date = Date.parse(parsed[:iso])
       parsed_date == Date.today
     end
 
     def get_relative_description(date_input)
       parsed = parse_natural_date(date_input)
-      return nil unless parsed
+      return nil unless parsed.is_a?(Hash)
 
-      parsed_date = Date.parse(parsed[:parsed_date])
+      parsed_date = Date.parse(parsed[:iso])
       today = Date.today
 
       days_diff = (parsed_date - today).to_i
@@ -148,9 +151,9 @@ module Things3Mcp
       return false unless date_input
 
       parsed = parse_natural_date(date_input)
-      return false unless parsed
+      return false unless parsed.is_a?(Hash)
 
-      parsed_date = Date.parse(parsed[:parsed_date])
+      parsed_date = Date.parse(parsed[:iso])
       parsed_date < Date.today
     end
 
@@ -158,9 +161,9 @@ module Things3Mcp
       return false unless date_input
 
       parsed = parse_natural_date(date_input)
-      return false unless parsed
+      return false unless parsed.is_a?(Hash)
 
-      parsed_date = Date.parse(parsed[:parsed_date])
+      parsed_date = Date.parse(parsed[:iso])
       target_date = Date.today + days
 
       parsed_date <= target_date && parsed_date >= Date.today

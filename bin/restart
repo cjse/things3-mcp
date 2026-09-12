@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Restarts the server. Use after a git pull or an .env change.
+source "$(dirname "$0")/lib.sh"
+
+if agent_loaded; then
+  say "Restarting $LABEL"
+  launchctl kickstart -k "$SERVICE"
+  wait_for_server || die "server did not come back. See bin/logs"
+  say "Listening on $(local_url)"
+else
+  exec "$ROOT/bin/start"
+fi

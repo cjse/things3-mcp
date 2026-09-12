@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# Shows whether the agent, the local port, the public URL, and Things are up. Exit 1 if any is down.
+source "$(dirname "$0")/lib.sh"
+
+failed=0
+check() {
+  local label="$1"; shift
+  if "$@" &>/dev/null; then
+    echo "  ✓ $label"
+  else
+    echo "  ✗ $label"
+    failed=1
+  fi
+}
+
+pid="$(agent_pid)"
+check "agent loaded${pid:+ (pid $pid)}" agent_loaded
+check "local $(local_url)/mcp answers 401" test "$(http_code "$(local_url)/mcp")" = 401
+if [ "$(public_url)" != "$(local_url)" ]; then
+  check "public $(public_url) serves OAuth metadata" test "$(http_code "$(public_url)/.well-known/oauth-authorization-server" 10)" = 200
+fi
+check "Things is running" pgrep -xq Things3
+check ".env present" test -f "$ENV_FILE"
+
+if [ -f "$LOG_FILE" ]; then
+  echo
+  echo "Last log lines ($LOG_FILE):"
+  tail -n 5 "$LOG_FILE" | sed 's/^/  /'
+fi
+
+exit "$failed"

@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# Calls get_areas through the running server with the static token.
+# Proves the whole chain: agent, token auth, AppleScript, Things.
+source "$(dirname "$0")/lib.sh"
+
+[ -f "$ENV_FILE" ] || die "no .env. Run bin/setup first."
+token="$(env_get MCP_AUTH_TOKEN)"
+[ -n "$token" ] || die "MCP_AUTH_TOKEN is empty in .env; bin/check needs the static token"
+
+response="$(curl -s -m 70 -X POST "$(local_url)/mcp" \
+  -H "Authorization: Bearer $token" \
+  -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"get_areas","arguments":{}}}')" \
+  || die "no answer from $(local_url). Is the agent running? bin/status"
+
+if count="$(printf '%s' "$response" | ruby -rjson -e 'r = JSON.parse(STDIN.read); c = r.dig("result", "structuredContent", "count"); abort r.to_s unless c; puts c' 2>&1)"; then
+  say "get_areas returned $count area(s). Things answers."
+else
+  printf 'error: get_areas failed:\n%s\n' "$count" >&2
+  echo "If macOS showed an Automation prompt, click Allow and run bin/check again." >&2
+  exit 1
+fi

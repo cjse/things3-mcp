@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Things 3 MCP – Sign in</title>
+  <style>
+    :root { color-scheme: light dark; }
+    body { font-family: -apple-system, system-ui, sans-serif; margin: 0; display: grid; place-items: center; min-height: 100vh; background: Canvas; color: CanvasText; }
+    form { width: min(22rem, 90vw); padding: 2rem; border: 1px solid color-mix(in srgb, CanvasText 15%, transparent); border-radius: 12px; }
+    h1 { font-size: 1.25rem; margin: 0 0 .5rem; }
+    p { margin: .25rem 0 1rem; opacity: .8; font-size: .9rem; }
+    input { width: 100%; box-sizing: border-box; font: inherit; padding: .6rem; border-radius: 8px; border: 1px solid color-mix(in srgb, CanvasText 30%, transparent); }
+    button { margin-top: 1rem; width: 100%; font: inherit; padding: .6rem; border: 0; border-radius: 8px; background: #2f7cf6; color: white; }
+    .error { color: #d33; }
+  </style>
+</head>
+<body>
+  <form method="post" action="/authorize">
+    <h1>Connect to Things 3</h1>
+    <p><strong><%= h(client_name) %></strong> asks for access to your Things 3 tasks.<br>
+       After you sign in you will be sent back to <code><%= h(redirect_host) %></code>.</p>
+    <% if error %><p class="error"><%= h(error) %></p><% end %>
+    <% params.each do |key, value| %>
+      <input type="hidden" name="<%= h(key) %>" value="<%= h(value) %>">
+    <% end %>
+    <label>Password
+      <input type="password" name="password" autocomplete="current-password" autofocus required>
+    </label>
+    <button type="submit">Allow access</button>
+  </form>
+</body>
+</html>
